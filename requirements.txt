@@ -12,7 +12,9 @@ xgboost
 lightgbm
 tensorflow
 shap
-hopsworks[python]
+hopsworks==5.0.6
+confluent-kafka==2.11.1
+fastavro==1.12.0
 mlflow-skinny
 dagshub
 cloudpickle
