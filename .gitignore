@@ -1,0 +1,17 @@
+# Environment & Secrets
+.env
+*.env
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Caches & Temporary Artifacts
+.cache/
+.cache.sqlite
+*.log
+data/raw_backfill/*.csv
