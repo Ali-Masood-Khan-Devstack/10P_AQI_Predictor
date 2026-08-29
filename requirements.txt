@@ -6,13 +6,13 @@ matplotlib
 pandas>=2.0.0
 numpy>=1.24.0
 python-dotenv
-pymongo[srv]
+pymongo
 scikit-learn
 xgboost
 lightgbm
 tensorflow
 shap
-hopsworks
+hopsworks[python]
 mlflow-skinny
 dagshub
 cloudpickle
