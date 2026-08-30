@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import CITIES, HOPSWORKS_API_KEY, HOPSWORKS_PROJECT_NAME
 
 def fetch_hourly_city_data(city_key):
-    """Fetches latest real-time hourly payload for a city from Open-Meteo Forecast & Air Quality APIs."""
+    """Fetches latest real-time hourly payload for a city from Open-Meteo Forecast & Air Quality APIs in UTC."""
     city_info = CITIES[city_key]
     cache_session = requests_cache.CachedSession('.cache', expire_after=300)
     retry_session = retry(cache_session, retries=3, backoff_factor=0.2)
@@ -21,7 +21,7 @@ def fetch_hourly_city_data(city_key):
         "longitude": city_info["lon"],
         "past_days": 2,
         "forecast_days": 1,
-        "timezone": "auto"
+        "timezone": "UTC"
     }
 
     w_resp = openmeteo.weather_api("https://api.open-meteo.com/v1/forecast", params={
@@ -67,7 +67,7 @@ def run_hourly_pipeline():
         print(f"\nProcessing {CITIES[city_key]['name']}...")
         raw_df = fetch_hourly_city_data(city_key)
         
-        # Filter for current hour or latest observed timestamp
+        # Filter for exact current UTC hour or latest past observation
         past_df = raw_df[raw_df['datetime'] <= now_utc]
         if past_df.empty:
             latest_row = raw_df.head(1)
