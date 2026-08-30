@@ -8,7 +8,6 @@ from retry_requests import retry
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import CITIES, HOPSWORKS_API_KEY, HOPSWORKS_PROJECT_NAME
-from scripts.feature_engineering import engineer_features
 
 def fetch_hourly_city_data(city_key):
     """Fetches latest hourly payload for a city from Open-Meteo API."""
@@ -18,7 +17,7 @@ def fetch_hourly_city_data(city_key):
     openmeteo = openmeteo_requests.Client(session=retry_session)
 
     now_utc = datetime.now(timezone.utc)
-    start_date = (now_utc - timedelta(days=7)).date()
+    start_date = (now_utc - timedelta(days=2)).date()
     end_date = now_utc.date()
 
     params = {
@@ -46,30 +45,30 @@ def fetch_hourly_city_data(city_key):
     )
 
     df = pd.DataFrame({
-        "city": city_key,
+        "city": str(city_key),
         "datetime": time_range,
-        "temperature": h_w.Variables(0).ValuesAsNumpy(),
-        "humidity": h_w.Variables(1).ValuesAsNumpy(),
-        "wind_speed": h_w.Variables(2).ValuesAsNumpy(),
-        "wind_dir": h_w.Variables(3).ValuesAsNumpy(),
-        "uv_index": h_w.Variables(4).ValuesAsNumpy(),
-        "pm2_5": a_resp.Hourly().Variables(0).ValuesAsNumpy(),
-        "pm10": a_resp.Hourly().Variables(1).ValuesAsNumpy(),
-        "co": a_resp.Hourly().Variables(2).ValuesAsNumpy(),
-        "no2": a_resp.Hourly().Variables(3).ValuesAsNumpy(),
-        "so2": a_resp.Hourly().Variables(4).ValuesAsNumpy(),
-        "o3": a_resp.Hourly().Variables(5).ValuesAsNumpy(),
-        "dust": a_resp.Hourly().Variables(6).ValuesAsNumpy(),
-        "aod": a_resp.Hourly().Variables(7).ValuesAsNumpy()
+        "temperature": h_w.Variables(0).ValuesAsNumpy().astype("float64"),
+        "humidity": h_w.Variables(1).ValuesAsNumpy().astype("float64"),
+        "wind_speed": h_w.Variables(2).ValuesAsNumpy().astype("float64"),
+        "wind_dir": h_w.Variables(3).ValuesAsNumpy().astype("float64"),
+        "uv_index": h_w.Variables(4).ValuesAsNumpy().astype("float64"),
+        "pm2_5": a_resp.Hourly().Variables(0).ValuesAsNumpy().astype("float64"),
+        "pm10": a_resp.Hourly().Variables(1).ValuesAsNumpy().astype("float64"),
+        "co": a_resp.Hourly().Variables(2).ValuesAsNumpy().astype("float64"),
+        "no2": a_resp.Hourly().Variables(3).ValuesAsNumpy().astype("float64"),
+        "so2": a_resp.Hourly().Variables(4).ValuesAsNumpy().astype("float64"),
+        "o3": a_resp.Hourly().Variables(5).ValuesAsNumpy().astype("float64"),
+        "dust": a_resp.Hourly().Variables(6).ValuesAsNumpy().astype("float64"),
+        "aod": a_resp.Hourly().Variables(7).ValuesAsNumpy().astype("float64")
     })
     return df
 
 def run_hourly_pipeline():
-    print("=== Running Hourly Multi-City Feature Pipeline ===")
+    print("=== Running Hourly Multi-City Feature Ingestion Pipeline ===")
     for city_key in CITIES:
         print(f"\nProcessing {CITIES[city_key]['name']}...")
         raw_df = fetch_hourly_city_data(city_key)
-        feat_df = engineer_features(raw_df)
+        latest_row = raw_df.tail(1)
         
         if HOPSWORKS_API_KEY:
             try:
@@ -85,12 +84,12 @@ def run_hourly_pipeline():
                     time_travel_format="HUDI",
                     description=f"5-Year AQI & Weather Features for {CITIES[city_key]['name']}"
                 )
-                aqi_fg.insert(feat_df.tail(1))
-                print(f"[SUCCESS] Pushed latest feature row for {city_key} to Hopsworks FG: {fg_name}")
+                aqi_fg.insert(latest_row)
+                print(f"[SUCCESS] Pushed latest hourly row for {city_key} to Hopsworks FG: {fg_name}")
             except Exception as e:
-                print(f"[WARNING] Hopsworks push failed: {e}")
+                print(f"[WARNING] Hopsworks push failed for {city_key}: {e}")
         else:
-            print(f"[INFO] Latest feature calculated for {city_key} (PM2.5: {feat_df['pm2_5'].iloc[-1]:.1f} ug/m3).")
+            print(f"[INFO] Latest feature calculated for {city_key} (PM2.5: {latest_row['pm2_5'].iloc[-1]:.1f} ug/m3).")
 
 if __name__ == "__main__":
     run_hourly_pipeline()
