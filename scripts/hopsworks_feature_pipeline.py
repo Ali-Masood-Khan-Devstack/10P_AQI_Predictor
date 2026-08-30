@@ -19,7 +19,7 @@ def fetch_hourly_city_data(city_key):
     params = {
         "latitude": city_info["lat"],
         "longitude": city_info["lon"],
-        "past_days": 3,
+        "past_days": 2,
         "forecast_days": 1,
         "timezone": "auto"
     }
@@ -61,10 +61,20 @@ def fetch_hourly_city_data(city_key):
 
 def run_hourly_pipeline():
     print("=== Running Hourly Multi-City Feature Ingestion Pipeline ===")
+    now_utc = pd.Timestamp.now(tz='UTC').floor('h')
+    
     for city_key in CITIES:
         print(f"\nProcessing {CITIES[city_key]['name']}...")
         raw_df = fetch_hourly_city_data(city_key)
-        latest_row = raw_df.tail(1)
+        
+        # Filter for current hour or latest observed timestamp
+        past_df = raw_df[raw_df['datetime'] <= now_utc]
+        if past_df.empty:
+            latest_row = raw_df.head(1)
+        else:
+            latest_row = past_df.tail(1)
+
+        print(f"Ingesting latest observation timestamp: {latest_row['datetime'].iloc[-1]} for {city_key}")
         
         if HOPSWORKS_API_KEY:
             try:
