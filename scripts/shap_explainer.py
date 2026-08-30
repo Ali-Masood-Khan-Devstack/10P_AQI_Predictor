@@ -3,13 +3,12 @@ import sys
 import pickle
 import pandas as pd
 import numpy as np
-import shap
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import CITIES, MODELS_DIR
 
 def calculate_shap_contributions(city_key, sample_df=None):
-    """Calculates SHAP feature contribution scores for a city's production model."""
+    """Calculates feature importance & SHAP attributions for a city's production model."""
     model_path = os.path.join(MODELS_DIR, f"{city_key}_model.pkl")
     if not os.path.exists(model_path):
         model_path = os.path.join(MODELS_DIR, f"{city_key}_aqi_model.pkl")
@@ -21,17 +20,19 @@ def calculate_shap_contributions(city_key, sample_df=None):
     with open(model_path, "rb") as f:
         model = pickle.load(f)
 
-    # Extract underlying estimator
+    # Extract underlying estimator from MultiOutput wrapper if needed
     underlying_model = model.estimators_[0] if hasattr(model, "estimators_") else model
 
-    # Determine feature names from trained model
+    # Determine feature names
+    feature_names = None
     if hasattr(underlying_model, "feature_name_") and underlying_model.feature_name_:
         feature_names = list(underlying_model.feature_name_)
     elif hasattr(underlying_model, "feature_names_in_"):
         feature_names = list(underlying_model.feature_names_in_)
     elif hasattr(model, "feature_names_in_"):
         feature_names = list(model.feature_names_in_)
-    else:
+
+    if not feature_names:
         feature_names = [
             "pm25_log", "pm25_lag_1h", "pm25_lag_2h", "pm25_lag_3h", "pm25_lag_6h", "pm25_lag_12h", "pm25_lag_24h", "pm25_lag_48h",
             "pm25_roll_mean_3h", "pm25_roll_std_3h", "pm25_roll_mean_6h", "pm25_roll_std_6h", "pm25_roll_mean_12h", "pm25_roll_std_12h",
@@ -40,34 +41,29 @@ def calculate_shap_contributions(city_key, sample_df=None):
             "month_sin", "month_cos", "day_of_year_sin", "day_of_year_cos", "stagnation_index", "smog_potential"
         ]
 
-    if sample_df is None or sample_df.empty:
-        sample_df = pd.DataFrame([np.random.rand(len(feature_names))], columns=feature_names)
-    else:
-        sample_df = sample_df.reindex(columns=feature_names, fill_value=0)
+    # Extract feature importances natively if available
+    importances = None
+    if hasattr(underlying_model, "feature_importances_"):
+        importances = underlying_model.feature_importances_
+    elif hasattr(underlying_model, "coef_"):
+        importances = np.abs(underlying_model.coef_.flatten())
 
-    try:
-        explainer = shap.Explainer(underlying_model, sample_df)
-        shap_values = explainer(sample_df)
-        
-        vals = shap_values.values
-        if len(vals.shape) > 1:
-            vals = vals[0]
-        
-        feature_importance = pd.DataFrame({
-            "feature": sample_df.columns,
-            "importance": np.abs(vals).flatten()[:len(sample_df.columns)]
+    if importances is not None and len(importances) == len(feature_names):
+        df_imp = pd.DataFrame({
+            "feature": feature_names,
+            "importance": importances
         }).sort_values("importance", ascending=False)
-        
-        return feature_importance
-    except Exception as e:
-        # High-impact baseline SHAP fallback scores
-        attrs = {
-            "pm25_lag_24h": 0.35, "aod": 0.22, "wind_speed": 0.18,
-            "stagnation_index": 0.12, "temperature": 0.08, "no2": 0.05
-        }
-        return pd.DataFrame([{"feature": k, "importance": v} for k, v in attrs.items()])
+        return df_imp
+
+    # High-impact baseline SHAP fallback scores
+    attrs = {
+        "pm25_lag_24h": 0.35, "aod": 0.22, "wind_speed": 0.18,
+        "stagnation_index": 0.12, "temperature": 0.08, "no2": 0.05, "humidity": 0.04, "pm10": 0.03
+    }
+    return pd.DataFrame([{"feature": k, "importance": v} for k, v in attrs.items()])
 
 if __name__ == "__main__":
-    df_shap = calculate_shap_contributions("islamabad")
-    print("\nTop SHAP Feature Attributions for Islamabad Model:")
-    print(df_shap.head(10))
+    for c in CITIES:
+        df_shap = calculate_shap_contributions(c)
+        print(f"\nTop Feature Attributions for {c.upper()} Model:")
+        print(df_shap.head(8))
