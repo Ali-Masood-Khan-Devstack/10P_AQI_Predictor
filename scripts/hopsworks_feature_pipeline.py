@@ -55,7 +55,7 @@ def fetch_hourly_city_data(city_key):
         "uv_index": h_w.Variables(4).ValuesAsNumpy(),
         "pm2_5": a_resp.Hourly().Variables(0).ValuesAsNumpy(),
         "pm10": a_resp.Hourly().Variables(1).ValuesAsNumpy(),
-        "co": a_resp.Hourly().Variables(2).VariablesAsNumpy(),
+        "co": a_resp.Hourly().Variables(2).ValuesAsNumpy(),
         "no2": a_resp.Hourly().Variables(3).ValuesAsNumpy(),
         "so2": a_resp.Hourly().Variables(4).ValuesAsNumpy(),
         "o3": a_resp.Hourly().Variables(5).ValuesAsNumpy(),
