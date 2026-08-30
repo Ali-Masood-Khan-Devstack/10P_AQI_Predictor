@@ -284,7 +284,7 @@ def get_aqi_info(aqi_val):
 @st.cache_data(ttl=300)
 def load_features_from_hopsworks_or_live(city_key):
     """Attempts to fetch features from Hopsworks Feature Store, fallback to live payload."""
-    raw_df = fetch_hourly_city_data(city_key)
+    raw_df = fetch_hourly_city_data(city_key, past_days=90)
     feat_df = engineer_features(raw_df)
     source_label = "Live Satellite Telemetry API"
 
@@ -407,6 +407,7 @@ def main():
 
         if refresh_live:
             st.cache_data.clear()
+            st.rerun()
 
         # Load features directly from Hopsworks Feature Store with fallback
         with st.spinner(f"Querying Hopsworks Feature Store for {city_info['name']}..."):
@@ -632,9 +633,9 @@ def main():
 
         st.markdown("---")
 
-        # 5-Year Historical Dataset Trend Analysis (Dedicated Section)
+        # 5-Year Historical Dataset Trend Analysis (Dedicated Section with robust resampling)
         st.markdown(f"### 5-Year Historical AQI & Environmental Trends for **{city_info['name']}**")
-        st.write("Explores the full 5-year historical timeline (1,825 days / 43,824 hourly observations) to analyze multi-year seasonal smog spikes, climate patterns, and long-term air quality trends.")
+        st.write("Explores the historical timeline (multi-month / multi-year observations) to analyze seasonal smog spikes, climate patterns, and long-term air quality trends.")
 
         h_col1, h_col2 = st.columns([2, 1])
         with h_col2:
@@ -644,16 +645,21 @@ def main():
             )
 
         with h_col1:
-            st.caption(f"Showing 5-year historical trajectory for {city_info['name']} (2021 - 2026)")
+            st.caption(f"Showing historical trajectory for {city_info['name']}")
 
         if not feat_df.empty and 'datetime' in feat_df.columns:
             hist_plot_df = feat_df.copy()
             hist_plot_df['datetime'] = pd.to_datetime(hist_plot_df['datetime'], utc=True)
             hist_plot_df = hist_plot_df.sort_values('datetime')
 
-            # Resample daily averages for high performance plotting across 5-year timeline
+            # Resample daily averages for clean plotting
             hist_plot_df.set_index('datetime', inplace=True)
-            daily_hist = hist_plot_df.resample('D').mean(numeric_only=True).reset_index()
+            
+            # Determine resampling frequency dynamically based on date range
+            date_range_days = (hist_plot_df.index.max() - hist_plot_df.index.min()).days
+            resample_freq = 'D' if date_range_days >= 7 else 'h'
+            
+            daily_hist = hist_plot_df.resample(resample_freq).mean(numeric_only=True).reset_index()
 
             if hist_metric == "Calculated AQI Index":
                 daily_hist["plot_val"] = daily_hist["pm2_5"].apply(calculate_aqi)
@@ -685,18 +691,19 @@ def main():
                 line=dict(color=line_color, width=2)
             ))
 
-            # Calculate and add 30-day moving average trendline
-            daily_hist['ma_30'] = daily_hist['plot_val'].rolling(window=30, min_periods=1).mean()
+            # Calculate and add moving average trendline
+            ma_window = 30 if date_range_days >= 30 else max(1, date_range_days // 3)
+            daily_hist['ma_trend'] = daily_hist['plot_val'].rolling(window=ma_window, min_periods=1).mean()
             fig_hist.add_trace(go.Scatter(
                 x=daily_hist['datetime'],
-                y=daily_hist['ma_30'],
+                y=daily_hist['ma_trend'],
                 mode='lines',
-                name='30-Day Moving Average Trendline',
+                name='Moving Average Trendline',
                 line=dict(color='#2b6cb0', width=3, dash='dot')
             ))
 
             fig_hist.update_layout(
-                title=f"5-Year Timeline: {city_info['name']} {hist_metric} (2021 - 2026)",
+                title=f"Historical Timeline: {city_info['name']} {hist_metric}",
                 xaxis_title="Timeline Date",
                 yaxis_title=y_label,
                 height=450,

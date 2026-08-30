@@ -9,7 +9,7 @@ from retry_requests import retry
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import CITIES, HOPSWORKS_API_KEY, HOPSWORKS_PROJECT_NAME
 
-def fetch_hourly_city_data(city_key):
+def fetch_hourly_city_data(city_key, past_days=90):
     """Fetches latest real-time hourly payload for a city from Open-Meteo Forecast & Air Quality APIs in UTC."""
     city_info = CITIES[city_key]
     cache_session = requests_cache.CachedSession('.cache', expire_after=300)
@@ -19,7 +19,7 @@ def fetch_hourly_city_data(city_key):
     params = {
         "latitude": city_info["lat"],
         "longitude": city_info["lon"],
-        "past_days": 2,
+        "past_days": past_days,
         "forecast_days": 1,
         "timezone": "UTC"
     }
@@ -47,7 +47,7 @@ def fetch_hourly_city_data(city_key):
         "humidity": h_w.Variables(1).ValuesAsNumpy().astype("float64"),
         "wind_speed": h_w.Variables(2).ValuesAsNumpy().astype("float64"),
         "wind_dir": h_w.Variables(3).ValuesAsNumpy().astype("float64"),
-        "uv_index": h_w.Variables(4).ValuesAsNumpy().astype("float64"),
+        "uv_index": h_w.Variables(4).ValuesAsNumpy().astype("float64") if h_w.VariablesLength() > 4 else 0.0,
         "pm2_5": a_resp.Hourly().Variables(0).ValuesAsNumpy().astype("float64"),
         "pm10": a_resp.Hourly().Variables(1).ValuesAsNumpy().astype("float64"),
         "co": a_resp.Hourly().Variables(2).ValuesAsNumpy().astype("float64"),
@@ -65,7 +65,7 @@ def run_hourly_pipeline():
     
     for city_key in CITIES:
         print(f"\nProcessing {CITIES[city_key]['name']}...")
-        raw_df = fetch_hourly_city_data(city_key)
+        raw_df = fetch_hourly_city_data(city_key, past_days=2)
         
         # Filter for exact current UTC hour or latest past observation
         past_df = raw_df[raw_df['datetime'] <= now_utc]
