@@ -10,25 +10,21 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import CITIES, HOPSWORKS_API_KEY, HOPSWORKS_PROJECT_NAME
 
 def fetch_hourly_city_data(city_key):
-    """Fetches latest hourly payload for a city from Open-Meteo API."""
+    """Fetches latest real-time hourly payload for a city from Open-Meteo Forecast & Air Quality APIs."""
     city_info = CITIES[city_key]
-    cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+    cache_session = requests_cache.CachedSession('.cache', expire_after=300)
     retry_session = retry(cache_session, retries=3, backoff_factor=0.2)
     openmeteo = openmeteo_requests.Client(session=retry_session)
-
-    now_utc = datetime.now(timezone.utc)
-    start_date = (now_utc - timedelta(days=2)).date()
-    end_date = now_utc.date()
 
     params = {
         "latitude": city_info["lat"],
         "longitude": city_info["lon"],
-        "start_date": str(start_date),
-        "end_date": str(end_date),
+        "past_days": 3,
+        "forecast_days": 1,
         "timezone": "auto"
     }
 
-    w_resp = openmeteo.weather_api("https://archive-api.open-meteo.com/v1/archive", params={
+    w_resp = openmeteo.weather_api("https://api.open-meteo.com/v1/forecast", params={
         **params, "hourly": ["temperature_2m", "relative_humidity_2m", "windspeed_10m", "winddirection_10m", "uv_index"]
     })[0]
 
