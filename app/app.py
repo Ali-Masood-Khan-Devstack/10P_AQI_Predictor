@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta, timezone
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.settings import CITIES, DEFAULT_CITY, MODELS_DIR
+from config.settings import CITIES, DEFAULT_CITY, MODELS_DIR, HOPSWORKS_API_KEY, HOPSWORKS_PROJECT_NAME
 from scripts.hopsworks_feature_pipeline import fetch_hourly_city_data
 from scripts.feature_engineering import engineer_features
 from scripts.shap_explainer import calculate_shap_contributions
@@ -94,6 +94,32 @@ def get_aqi_info(aqi_val):
     elif aqi_val <= 300: return ("Very Unhealthy", "#8f3f97", "🚨 Health alert: Significant smog risk. Avoid outdoor exercise.")
     else: return ("Hazardous", "#7e0023", "☢️ Emergency conditions. Remain indoors with air purifiers.")
 
+@st.cache_data(ttl=300)
+def load_features_from_hopsworks_or_live(city_key):
+    """Attempts to fetch features from Hopsworks Feature Store, fallback to live payload."""
+    raw_df = fetch_hourly_city_data(city_key)
+    feat_df = engineer_features(raw_df)
+    source_label = "Live Satellite Telemetry API"
+
+    if HOPSWORKS_API_KEY:
+        try:
+            import hopsworks
+            project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY, project=HOPSWORKS_PROJECT_NAME)
+            fs = project.get_feature_store()
+            fg_name = CITIES[city_key]["fg_name"]
+            fg = fs.get_feature_group(fg_name, version=1)
+            hw_df = fg.read()
+            if not hw_df.empty:
+                hw_df['datetime'] = pd.to_datetime(hw_df['datetime'], utc=True)
+                hw_df = hw_df.sort_values('datetime')
+                raw_df = hw_df
+                feat_df = engineer_features(raw_df)
+                source_label = f"Hopsworks Cloud Feature Store ({fg_name})"
+        except Exception as e:
+            source_label = f"Live Satellite API (Hopsworks fallback)"
+
+    return raw_df, feat_df, source_label
+
 def main():
     # Sidebar Navigation
     with st.sidebar:
@@ -136,12 +162,14 @@ def main():
     # Top Control Bar
     col_btn, col_status = st.columns([1, 3])
     with col_btn:
-        refresh_live = st.button("🔄 Refresh Live Satellite Payload", type="primary", use_container_width=True)
+        refresh_live = st.button("🔄 Refresh Data Feed", type="primary", use_container_width=True)
 
-    # Always fetch live data automatically on load or city switch or button refresh
-    with st.spinner(f"Fetching real-time satellite & sensor metrics for {city_info['name']}..."):
-        raw_df = fetch_hourly_city_data(city_key)
-        feat_df = engineer_features(raw_df)
+    if refresh_live:
+        st.cache_data.clear()
+
+    # Load features directly from Hopsworks Feature Store with fallback
+    with st.spinner(f"Querying Hopsworks Feature Store for {city_info['name']}..."):
+        raw_df, feat_df, data_source = load_features_from_hopsworks_or_live(city_key)
         latest = feat_df.iloc[-1].to_dict()
         latest_time = latest.get("datetime")
         if isinstance(latest_time, pd.Timestamp):
@@ -150,7 +178,7 @@ def main():
             time_str = str(latest_time)
 
     with col_status:
-        st.success(f"📡 **Live Feed Status:** Connected | **Latest Hourly Observation:** `{time_str}`")
+        st.success(f"📡 **Source:** `{data_source}` | **Latest Feature Observation:** `{time_str}`")
 
     # Load Model & Predict
     model = None
