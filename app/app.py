@@ -125,7 +125,7 @@ def main():
 
         if model is not None:
             drop_cols = ['_id', 'datetime', 'city', 'target_h24', 'target_h48', 'target_h72']
-            input_df = pd.DataFrame([latest]).drop(columns=drop_cols, errors='ignore')
+            input_df = pd.DataFrame([latest]).drop(columns=drop_cols, errors='ignore').fillna(0)
             try:
                 preds = np.maximum(model.predict(input_df).flatten(), 0)
             except Exception:
