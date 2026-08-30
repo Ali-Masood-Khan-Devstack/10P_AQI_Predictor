@@ -7,7 +7,6 @@ xgboost
 shap
 plotly
 pydeck
-hopsworks
 openmeteo-requests
 requests-cache
 retry-requests
