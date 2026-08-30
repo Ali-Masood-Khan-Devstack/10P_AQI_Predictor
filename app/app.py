@@ -155,7 +155,7 @@ def main():
     st.markdown(f"""
         <div class="main-header">
             <h1>🌍 {city_info['name']} Air Quality Intelligence Dashboard</h1>
-            <p>Real-Time Live 9-Pollutant Monitoring & AI 3-Day Forecast (5-Year Historical Dataset)</p>
+            <p>Real-Time Live Environmental Monitoring & AI 3-Day Forecast (5-Year Historical Dataset)</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -227,8 +227,8 @@ def main():
 
     st.markdown("---")
 
-    # 9 Pollutants Grid
-    st.markdown("### 🧪 Live 9 Environmental Parameters Grid")
+    # 9 Environmental Parameters Grid
+    st.markdown("### 🧪 Live Environmental Parameters Grid")
     p1, p2, p3, p4, p5 = st.columns(5)
     p1.metric("PM2.5", f"{safe_val(latest.get('pm2_5')):.1f} μg/m³")
     p2.metric("PM10", f"{safe_val(latest.get('pm10')):.1f} μg/m³")
@@ -236,11 +236,12 @@ def main():
     p4.metric("SO₂", f"{safe_val(latest.get('so2')):.1f} μg/m³")
     p5.metric("CO", f"{safe_val(latest.get('co')):.1f} μg/m³")
 
-    q1, q2, q3, q4 = st.columns(4)
+    q1, q2, q3, q4, q5 = st.columns(5)
     q1.metric("O₃ (Ozone)", f"{safe_val(latest.get('o3')):.1f} μg/m³")
     q2.metric("Dust Mass", f"{safe_val(latest.get('dust')):.1f} μg/m³")
     q3.metric("AOD (Aerosol)", f"{safe_val(latest.get('aod')):.2f}")
-    q4.metric("UV Index", f"{safe_val(latest.get('uv_index'), 0.0):.1f}")
+    q4.metric("Live Temperature", f"{safe_val(latest.get('temperature')):.1f} °C")
+    q5.metric("Relative Humidity", f"{safe_val(latest.get('humidity')):.1f} %")
 
     st.markdown("---")
 
