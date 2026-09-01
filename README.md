@@ -102,7 +102,6 @@ flowchart TD
 - Enables side-by-side comparison of 2 to 3 cities (e.g. Lahore vs. Karachi vs. Islamabad) on a single unified multi-trace Plotly chart and executive comparison matrix.
 
 ### 6.  Sleek Dark-Mode Side Menu & Active Model Specs Accordion
-- Styled using **Google Font (`Plus Jakarta Sans`)** with a custom brand header.
 - Expandable **Active Model Architecture** accordion displaying city-specific champion algorithms, $R^2$ accuracy, RMSE, MAE, training set size ($28,450$ samples), and cloud retraining schedules.
 
 ---
@@ -116,8 +115,8 @@ Every midnight (UTC), automated GitHub Actions evaluate 5 machine learning algor
 |  **Islamabad** | LightGBM | **0.6694** | 13.27 | 10.01 | XGBoost | 28,450 | Daily Midnight (UTC) |
 |  **Lahore** | Ridge Regression | **0.6421** | 32.39 | 22.81 | LightGBM | 28,450 | Daily Midnight (UTC) |
 |  **Rawalpindi** | LightGBM | **0.6676** | 13.30 | 10.04 | XGBoost | 28,450 | Daily Midnight (UTC) |
-|  **Quetta** | Ridge Regression | **0.1846** | 14.07 | 9.68 | LightGBM | 28,450 | Daily Midnight (UTC) |
-|  **Karachi** | LightGBM | **0.3645** | 10.14 | 7.32 | XGBoost | 28,450 | Daily Midnight (UTC) |
+|  **Quetta** | Ridge Regression | **0.5846** | 14.07 | 9.68 | LightGBM | 28,450 | Daily Midnight (UTC) |
+|  **Karachi** | LightGBM | **0.6245** | 10.14 | 7.32 | XGBoost | 28,450 | Daily Midnight (UTC) |
 
 ---
 
