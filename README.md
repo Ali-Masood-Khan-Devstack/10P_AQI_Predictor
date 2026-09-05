@@ -6,7 +6,7 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://alimasood-aqi-predictor.streamlit.app/)
 [![Hopsworks Feature Store](https://img.shields.io/badge/Feature%20Store-Hopsworks-blue.svg?logo=python&logoColor=white)](https://www.hopsworks.ai/)
-[![CI/CD Pipelines](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg?logo=github-actions&logoColor=white)]([https://github.com/features/actions](https://github.com/Ali-Masood-Khan-Devstack/10P_AQI_Predictor/actions))
+[![CI/CD Pipelines](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg?logo=github-actions&logoColor=white)](https://github.com/Ali-Masood-Khan-Devstack/10P_AQI_Predictor/actions)
 [![Python Version](https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
