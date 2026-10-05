@@ -83,7 +83,7 @@ flowchart TD
 - **Real-Time Telemetry Badge Bar:** Displays live source verification (`Hopsworks Cloud Feature Store`) and latest UTC observation timestamps.
 - **Interactive Focused GIS Map:** High-precision map interface centered on the selected target city.
 - **3-Day AI Forecast Cards:** Live forecast metrics for $+24\text{h}$, $+48\text{h}$, and $+72\text{h}$ horizons.
-- **9 Live Environmental Parameters Grid:** Real-time values for $\text{PM}_{2.5}$, $\text{PM}_{10}$, $\text{NO}_2$, $\text{SO}_2$, $\text{CO}$, Ozone ($\text{O}_3$), Dust Mass, Aerosol Optical Depth (AOD), Temperature ($^\circ\text{C}$), and Humidity ($\%$).
+- **9 Live Environmental Parameters Grid:** Real-time values for **$\text{PM}_{2.5}$**, **$\text{PM}_{10}$**, $\text{NO}_2$, $\text{SO}_2$, $\text{CO}$, Ozone ($\text{O}_3$), Dust Mass, Aerosol Optical Depth (AOD), Temperature ($^\circ\text{C}$), and Humidity ($\%$).
 
 ### 2.  24-Hour Day-over-Day AQI Delta Analysis
 - Evaluates short-term atmospheric shifts with 4 compact metric cards: **Yesterday's Avg AQI**, **Today's Current AQI**, **24h Point Delta Shift** (with percentage change highlighted in Red for degraded air or Green for cleaner air), and **24h Air Quality Trajectory**.
